@@ -1,3 +1,6 @@
+## NOTE
+This is fork of the mokuro repo. All my changes are on the `fork` branch.
+
 # mokuro
 
 Read Japanese manga with selectable text inside a browser.
