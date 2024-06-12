@@ -4,7 +4,7 @@ from PIL import Image
 from loguru import logger
 from scipy.signal.windows import gaussian
 
-from comic_text_detector.inference import TextDetector
+from .comic_text_detector.inference import TextDetector
 from manga_ocr import MangaOcr
 from mokuro import __version__
 from mokuro.cache import cache
