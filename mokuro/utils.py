@@ -5,6 +5,8 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import pillow_avif
+from PIL import Image
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -26,9 +28,10 @@ def dump_json(obj, path):
         json.dump(obj, f, ensure_ascii=False, cls=NumpyEncoder)
 
 
-def imread(path, flags=cv2.IMREAD_COLOR):
+def imread(path) -> np.ndarray | None:
     """cv2.imread, but works with unicode paths"""
-    return cv2.imdecode(np.fromfile(path, dtype=np.uint8), flags)
+    image = Image.open(path).convert('RGB')
+    return cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
 
 
 def get_path_format(path: Path):

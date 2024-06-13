@@ -1,6 +1,11 @@
 ## NOTE
 This is fork of the mokuro repo. All my changes are on the `fork` branch.
 
+### My Changelog
+* Moved comic_text_detector into mokuro package
+  * (will probably clean up further)
+* Added support for AVIF images.
+
 # mokuro
 
 Read Japanese manga with selectable text inside a browser.

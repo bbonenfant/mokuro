@@ -27,6 +27,7 @@ setup(
         "numpy",
         "opencv-python>=4.1.2",
         "Pillow>=7.1.2",
+        "pillow-avif-plugin>=1.4.3",
         "pyclipper",
         "requests",
         "scipy",
