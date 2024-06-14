@@ -1,4 +1,3 @@
-from collections import Counter
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Sequence, Optional, Union
@@ -8,17 +7,17 @@ from loguru import logger
 
 from mokuro import MokuroGenerator
 from mokuro.legacy.overlay_generator import generate_legacy_html
-from mokuro.volume import VolumeCollection
+from mokuro.volume import Volume
 
 
-def run(*paths: Optional[Sequence[Union[str, Path]]],
+def run(*paths: str | Path,
         parent_dir: Optional[Union[str, Path]] = None,
         pretrained_model_name_or_path: str = 'kha-white/manga-ocr-base',
         force_cpu: bool = False,
         disable_confirmation: bool = False,
         disable_ocr: bool = False,
         ignore_errors: bool = False,
-        no_cache: bool = False,
+        no_cache: bool = True,
         unzip: bool = False,
         disable_html: bool = False,
         as_one_file: bool = True,
@@ -52,61 +51,45 @@ def run(*paths: Optional[Sequence[Union[str, Path]]],
 
     logger.info('Scanning paths...')
 
-    paths_ = []
+    normalized_paths = []
     for path in paths:
         path_normalized = Path(path).expanduser().absolute()
-
-        try:
-            path_valid = path_normalized.exists()
-        except OSError:
-            path_valid = False
-
-        if path_valid:
-            paths_.append(path_normalized)
-        else:
+        if not path_normalized.exists():
             logger.error(f'Invalid path: {path_normalized}')
             return
-
-    paths = paths_
+        normalized_paths.append(path_normalized)
 
     if parent_dir is not None:
         for p in Path(parent_dir).expanduser().absolute().iterdir():
-            if (p not in paths and
+            if (p not in normalized_paths and
                     (p.is_dir() and p.stem != '_ocr') or
                     (p.is_file() and p.suffix.lower() in {'.zip', '.cbz'})
             ):
-                paths.append(p)
+                normalized_paths.append(p)
 
-    vc = VolumeCollection()
+    volumes = [Volume(path) for path in normalized_paths]
 
-    for path_in in paths:
-        vc.add_path_in(path_in)
-
-    if len(vc) == 0:
+    if len(volumes) == 0:
         logger.error('Found no paths to process. Did you set the paths correctly?')
         return
 
-    for title in vc.titles.values():
-        title.set_uuid()
-
-    status_counter = Counter()
-
-    print(f'\nFound {len(vc)} volumes:\n')
-
-    for volume in vc:
+    print(f'\nFound {len(volumes)} volumes:\n')
+    for volume in volumes:
         print(volume)
-        status_counter[volume.status] += 1
 
     msg = '\nEach of the paths above will be treated as one volume.\n'
     print(msg)
 
     if not disable_confirmation:
-        inp = input('\nContinue? [yes/no]')
+        inp = input('\nContinue? [yes/no] ')
         if inp.lower() not in ('y', 'yes'):
             return
 
-    mg = MokuroGenerator(pretrained_model_name_or_path=pretrained_model_name_or_path, force_cpu=force_cpu,
-                         disable_ocr=disable_ocr)
+    mg = MokuroGenerator(
+        pretrained_model_name_or_path=pretrained_model_name_or_path,
+        force_cpu=force_cpu,
+        disable_ocr=disable_ocr,
+    )
 
     with TemporaryDirectory() as tmp_dir:
         tmp_dir = Path(tmp_dir)
@@ -117,8 +100,8 @@ def run(*paths: Optional[Sequence[Union[str, Path]]],
             tmp_dir = None
 
         num_sucessful = 0
-        for i, volume in enumerate(vc):
-            logger.info(f'Processing {i + 1}/{len(vc)}: {volume.path_in}')
+        for i, volume in enumerate(volumes):
+            logger.info(f'Processing {i + 1}/{len(volumes)}: {volume.path_in}')
 
             try:
                 volume.unzip(tmp_dir)
@@ -131,7 +114,7 @@ def run(*paths: Optional[Sequence[Union[str, Path]]],
             else:
                 num_sucessful += 1
 
-        logger.info(f'Processed successfully: {num_sucessful}/{len(vc)}')
+        logger.info(f'Processed successfully: {num_sucessful}/{len(volumes)}')
 
 
 if __name__ == '__main__':

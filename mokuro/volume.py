@@ -1,5 +1,6 @@
 import uuid
 from enum import Enum, auto
+from pathlib import Path
 
 from loguru import logger
 from natsort import natsorted
@@ -74,7 +75,7 @@ class Volume:
             self.mokuro_data = None
             self.uuid = str(uuid.uuid4())
 
-        self.title = None
+        self.title = Title(self.path_title)
         self.name = self.path_mokuro.stem
 
         if self.path_mokuro.is_file():
@@ -125,35 +126,9 @@ class Volume:
         return f'{self.path_in} ({self.status})'
 
 
-class VolumeCollection:
-    def __init__(self):
-        self.volumes = {}
-        self.titles = {}
-
-    def __len__(self):
-        return len(self.volumes)
-
-    def __iter__(self):
-        return iter(natsorted(self.volumes.values(), key=lambda vtp: vtp.path_in))
-
-    def add_path_in(self, path_in):
-        path_mokuro = get_path_mokuro(path_in)
-        if path_mokuro in self.volumes:
-            volume = self.volumes[path_mokuro]
-            volume.paths_in.add(path_in)
-        else:
-            volume = self.volumes[path_mokuro] = Volume(path_in)
-
-        if volume.path_title in self.titles:
-            title = self.titles[volume.path_title]
-        else:
-            title = self.titles[volume.path_title] = Title(volume.path_title)
-
-        volume.title = title
-
-
-def get_path_mokuro(path_in):
+def get_path_mokuro(path_in: Path) -> Path:
     if path_in.is_dir():
         return path_in.parent / (path_in.name + '.mokuro')
     if path_in.is_file() and path_in.suffix.lower() in {'.zip', '.cbz'}:
         return path_in.with_suffix('.mokuro')
+    raise ValueError(f"expected directory or zip file -- found: {path_in}")

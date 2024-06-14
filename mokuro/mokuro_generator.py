@@ -10,21 +10,34 @@ from mokuro.volume import Volume
 
 
 class MokuroGenerator:
-    def __init__(self,
-                 pretrained_model_name_or_path='kha-white/manga-ocr-base',
-                 force_cpu=False,
-                 disable_ocr=False,
-                 **kwargs):
+    def __init__(
+        self,
+        pretrained_model_name_or_path='kha-white/manga-ocr-base',
+        force_cpu=False,
+        disable_ocr=False,
+        **kwargs
+    ):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.force_cpu = force_cpu
         self.disable_ocr = disable_ocr
         self.kwargs = kwargs
-        self.mpocr = None
+        self._mpocr = None
 
     def init_models(self):
-        if self.mpocr is None:
-            self.mpocr = MangaPageOcr(self.pretrained_model_name_or_path, force_cpu=self.force_cpu,
-                                      disable_ocr=self.disable_ocr, **self.kwargs)
+        if self._mpocr is None:
+            self._mpocr = MangaPageOcr(
+                self.pretrained_model_name_or_path,
+                force_cpu=self.force_cpu,
+                disable_ocr=self.disable_ocr,
+                **self.kwargs
+            )
+
+    @property
+    def mpocr(self) -> MangaPageOcr:
+        if self._mpocr is None:
+            self.init_models()
+        assert self._mpocr is not None
+        return self._mpocr
 
     def process_volume(self, volume: Volume, ignore_errors=False, no_cache=False):
         volume.path_ocr_cache.mkdir(parents=True, exist_ok=True)

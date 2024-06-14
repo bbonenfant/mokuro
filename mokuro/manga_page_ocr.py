@@ -2,10 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from loguru import logger
-from scipy.signal.windows import gaussian
 
-from .comic_text_detector.inference import TextDetector
-from manga_ocr import MangaOcr
 from mokuro import __version__
 from mokuro.cache import cache
 from mokuro.utils import imread
@@ -17,17 +14,17 @@ class InvalidImage(Exception):
 
 
 class MangaPageOcr:
-    def __init__(self,
-                 pretrained_model_name_or_path='kha-white/manga-ocr-base',
-                 force_cpu=False,
-                 detector_input_size=1024,
-                 text_height=64,
-                 max_ratio_vert=16,
-                 max_ratio_hor=8,
-                 anchor_window=2,
-                 disable_ocr=False,
-                 ):
-
+    def __init__(
+        self,
+        pretrained_model_name_or_path='kha-white/manga-ocr-base',
+        force_cpu=False,
+        detector_input_size=1024,
+        text_height=64,
+        max_ratio_vert=16,
+        max_ratio_hor=8,
+        anchor_window=2,
+        disable_ocr=False,
+    ):
         self.text_height = text_height
         self.max_ratio_vert = max_ratio_vert
         self.max_ratio_hor = max_ratio_hor
@@ -35,9 +32,15 @@ class MangaPageOcr:
         self.disable_ocr = disable_ocr
 
         if not self.disable_ocr:
+            from .comic_text_detector.inference import TextDetector
+            from manga_ocr import MangaOcr
             logger.info('Initializing text detector')
-            self.text_detector = TextDetector(model_path=cache.comic_text_detector, input_size=detector_input_size,
-                                              device='cpu', act='leaky')
+            self.text_detector = TextDetector(
+                model_path=cache.comic_text_detector,
+                input_size=detector_input_size,
+                device='cpu',
+                act='leaky',
+            )
             self.mocr = MangaOcr(pretrained_model_name_or_path, force_cpu)
 
     def __call__(self, img_path):
@@ -52,8 +55,13 @@ class MangaPageOcr:
 
         mask, mask_refined, blk_list = self.text_detector(img, refine_mode=1, keep_undetected_mask=True)
         for blk_idx, blk in enumerate(blk_list):
-            result_blk = {'box': list(blk.xyxy), 'vertical': blk.vertical, 'font_size': blk.font_size,
-                          'lines_coords': [], 'lines': []}
+            result_blk = {
+                'box': list(blk.xyxy),
+                'vertical': blk.vertical,
+                'font_size': blk.font_size,
+                'lines_coords': [],
+                'lines': [],
+            }
 
             for line_idx, line in enumerate(blk.lines_array()):
                 if blk.vertical:
@@ -61,9 +69,15 @@ class MangaPageOcr:
                 else:
                     max_ratio = self.max_ratio_hor
 
-                line_crops, cut_points = self.split_into_chunks(img, mask_refined, blk, line_idx,
-                                                                textheight=self.text_height, max_ratio=max_ratio,
-                                                                anchor_window=self.anchor_window)
+                line_crops, cut_points = self.split_into_chunks(
+                    img,
+                    mask_refined,
+                    blk,
+                    line_idx,
+                    textheight=self.text_height,
+                    max_ratio=max_ratio,
+                    anchor_window=self.anchor_window
+                )
 
                 line_text = ''
                 for line_crop in line_crops:
@@ -89,6 +103,14 @@ class MangaPageOcr:
             return [line_crop], []
 
         else:
+            # I believe this ratio check is due to this usage tip:
+            #   github.com/kha-white/manga-ocr/blob/master/README.md#usage-tips
+            # If this fork gets to a point where you and modify and edit the
+            # OCR output directly, this can probably be removed.
+            # An initial test shows that this ratio is usually exceeded for
+            # non-relevant manga text.
+            #logger.warning(f"ratio too big: {w} / {h} = {ratio}")
+            from scipy.signal.windows import gaussian
             k = gaussian(textheight * 2, textheight / 8)
 
             line_mask = blk.get_transformed_region(mask_refined, line_idx, textheight)

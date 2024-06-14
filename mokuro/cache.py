@@ -4,7 +4,7 @@ import requests
 from loguru import logger
 
 
-class cache:
+class _cache:
     def __init__(self):
         self.root = Path.home() / '.cache' / 'manga-ocr'
         self.root.mkdir(parents=True, exist_ok=True)
@@ -12,7 +12,7 @@ class cache:
     @property
     def comic_text_detector(self):
         path = self.root / 'comictextdetector.pt'
-        url = 'https://github.com/zyddnys/manga-image-translator/releases/download/beta-0.2.1/comictextdetector.pt'
+        url = 'https://github.com/zyddnys/manga-image-translator/releases/download/beta-0.3/comictextdetector.pt'
 
         self._download_if_needed(path, url)
         return path
@@ -30,4 +30,4 @@ class cache:
             logger.info(f'Finished downloading {url}')
 
 
-cache = cache()
+cache = _cache()
