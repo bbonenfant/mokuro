@@ -6,7 +6,7 @@ import fire
 from loguru import logger
 
 from mokuro import MokuroGenerator
-from mokuro.legacy.overlay_generator import generate_legacy_html
+# from mokuro.legacy.overlay_generator import generate_legacy_html
 from mokuro.volume import Volume
 
 
@@ -91,30 +91,20 @@ def run(*paths: str | Path,
         disable_ocr=disable_ocr,
     )
 
-    with TemporaryDirectory() as tmp_dir:
-        tmp_dir = Path(tmp_dir)
+    num_sucessful = 0
+    for i, volume in enumerate(volumes):
+        logger.info(f'Processing {i + 1}/{len(volumes)}: {volume.path}')
 
-        # unzip == True means that zipped volumes will be unzipped in their original location
-        # in that case, we don't use a temporary directory
-        if unzip:
-            tmp_dir = None
+        try:
+            mg.process_volume(volume, ignore_errors=ignore_errors, no_cache=no_cache)
+            # if not disable_html:
+            #     generate_legacy_html(volume, as_one_file=as_one_file, ignore_errors=ignore_errors)
+        except Exception:
+            logger.exception(f'Error while processing {volume.path}')
+        else:
+            num_sucessful += 1
 
-        num_sucessful = 0
-        for i, volume in enumerate(volumes):
-            logger.info(f'Processing {i + 1}/{len(volumes)}: {volume.path_in}')
-
-            try:
-                volume.unzip(tmp_dir)
-                mg.process_volume(volume, ignore_errors=ignore_errors, no_cache=no_cache)
-                if not disable_html:
-                    generate_legacy_html(volume, as_one_file=as_one_file, ignore_errors=ignore_errors)
-
-            except Exception:
-                logger.exception(f'Error while processing {volume.path_in}')
-            else:
-                num_sucessful += 1
-
-        logger.info(f'Processed successfully: {num_sucessful}/{len(volumes)}')
+    logger.info(f'Processed successfully: {num_sucessful}/{len(volumes)}')
 
 
 if __name__ == '__main__':

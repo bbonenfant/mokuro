@@ -3,6 +3,8 @@ from pathlib import Path
 import requests
 from loguru import logger
 
+from mokuro import __comic_text_detector_version__
+
 
 class _cache:
     def __init__(self):
@@ -12,7 +14,10 @@ class _cache:
     @property
     def comic_text_detector(self):
         path = self.root / 'comictextdetector.pt'
-        url = 'https://github.com/zyddnys/manga-image-translator/releases/download/beta-0.3/comictextdetector.pt'
+        url = (
+            'https://github.com/zyddnys/manga-image-translator/releases/download/'
+            f'{__comic_text_detector_version__}/comictextdetector.pt'
+        )
 
         self._download_if_needed(path, url)
         return path

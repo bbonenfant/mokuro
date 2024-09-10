@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 from PIL import Image
 from loguru import logger
+from uuid_utils import uuid7
 
-from mokuro import __version__
 from mokuro.cache import cache
 from mokuro.utils import imread
 
@@ -33,7 +33,7 @@ class MangaPageOcr:
 
         if not self.disable_ocr:
             from .comic_text_detector.inference import TextDetector
-            from manga_ocr import MangaOcr
+            from manga_ocr import MangaOcr, __version__ as __manga_ocr_version__
             logger.info('Initializing text detector')
             self.text_detector = TextDetector(
                 model_path=cache.comic_text_detector,
@@ -42,13 +42,14 @@ class MangaPageOcr:
                 act='leaky',
             )
             self.mocr = MangaOcr(pretrained_model_name_or_path, force_cpu)
+            self.mocr_version = __manga_ocr_version__
 
     def __call__(self, img_path):
         img = imread(img_path)
         if img is None:
             raise InvalidImage()
-        H, W, *_ = img.shape
-        result = {'version': __version__, 'img_width': W, 'img_height': H, 'blocks': []}
+        height, width, *_ = img.shape
+        result = {'img_width': width, 'img_height': height, 'blocks': []}
 
         if self.disable_ocr:
             return result
@@ -56,9 +57,10 @@ class MangaPageOcr:
         mask, mask_refined, blk_list = self.text_detector(img, refine_mode=1, keep_undetected_mask=True)
         for blk_idx, blk in enumerate(blk_list):
             result_blk = {
+                "uuid": uuid7().hex,
                 'box': list(blk.xyxy),
                 'vertical': blk.vertical,
-                'font_size': blk.font_size,
+                'font_size': int(blk.font_size),  # Font size in pixels should be integer.
                 'lines_coords': [],
                 'lines': [],
             }
@@ -84,7 +86,13 @@ class MangaPageOcr:
                     if blk.vertical:
                         line_crop = cv2.rotate(line_crop, cv2.ROTATE_90_CLOCKWISE)
                     line_text += self.mocr(Image.fromarray(line_crop))
-
+                line_text = (line_text
+                    .replace("．．．", "⋯")  # replace triple full stop with proper ellipse
+                    .replace("。。。", "⋯")  # replace triple full stop with proper ellipse
+                    .replace("！！", "‼︎")  # replace double ! with single character.
+                    .replace("？！", "⁈")  # replace ? ! with single character.
+                    .replace("！？", "⁉︎")  # replace ! ? with single character.
+                )
                 result_blk['lines_coords'].append(line.tolist())
                 result_blk['lines'].append(line_text)
 

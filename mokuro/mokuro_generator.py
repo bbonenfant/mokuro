@@ -1,11 +1,13 @@
-from json import JSONDecodeError
+from datetime import datetime
+import json
+from zipfile import ZipFile, ZIP_DEFLATED
 
 from loguru import logger
 from tqdm import tqdm
 
-from mokuro import __version__
+from mokuro import __version__, __comic_text_detector_version__
 from mokuro.manga_page_ocr import MangaPageOcr
-from mokuro.utils import dump_json, load_json
+from mokuro.utils import NumpyEncoder
 from mokuro.volume import Volume
 
 
@@ -21,9 +23,9 @@ class MokuroGenerator:
         self.force_cpu = force_cpu
         self.disable_ocr = disable_ocr
         self.kwargs = kwargs
-        self._mpocr = None
+        self._mpocr: MangaPageOcr | None = None
 
-    def init_models(self):
+    def init_models(self) -> MangaPageOcr:
         if self._mpocr is None:
             self._mpocr = MangaPageOcr(
                 self.pretrained_model_name_or_path,
@@ -31,76 +33,39 @@ class MokuroGenerator:
                 disable_ocr=self.disable_ocr,
                 **self.kwargs
             )
-
-    @property
-    def mpocr(self) -> MangaPageOcr:
-        if self._mpocr is None:
-            self.init_models()
-        assert self._mpocr is not None
         return self._mpocr
 
     def process_volume(self, volume: Volume, ignore_errors=False, no_cache=False):
-        volume.path_ocr_cache.mkdir(parents=True, exist_ok=True)
-
-        if volume.mokuro_data is not None:
-            for page in volume.mokuro_data['pages']:
-                json_path = (volume.path_ocr_cache / page['img_path']).with_suffix('.json')
-                if json_path.is_file():
-                    continue
-                json_path.parent.mkdir(parents=True, exist_ok=True)
-                page = page.copy()
-                page.pop('img_path')
-                dump_json(page, json_path)
-
-        img_paths = volume.get_img_paths()
-
-        for img_path_rel in tqdm(img_paths.values(), desc='Processing pages...'):
-            try:
-                json_path = (volume.path_ocr_cache / img_path_rel).with_suffix('.json')
-
-                try:
-                    load_json(json_path)
-                    already_processed = True
-                except (FileNotFoundError, JSONDecodeError, UnicodeDecodeError):
-                    already_processed = False
-
-                if no_cache or not already_processed:
-                    self.init_models()
-                    result = self.mpocr(volume.path_in / img_path_rel)
-                    json_path.parent.mkdir(parents=True, exist_ok=True)
-                    dump_json(result, json_path)
-            except Exception as e:
-                if ignore_errors:
-                    logger.error(e)
-                else:
-                    raise e
-
-        self.generate_mokuro_file(volume, ignore_errors=ignore_errors)
-
-    @staticmethod
-    def generate_mokuro_file(volume: Volume, ignore_errors=False):
-        json_paths = volume.get_json_paths()
-        img_paths = volume.get_img_paths()
-
-        out = {
-            'version': __version__,
+        mpocr_model = self.init_models()
+        timestamp = datetime.now().isoformat()
+        metadata = {
+            'version': (
+                f"mokuro:{__version__};"
+                f"comic_text_detector: {__comic_text_detector_version__};"
+                f"manga_ocr: {mpocr_model.mocr_version};"
+            ),
+            'created_at': timestamp,
+            'modified_at': timestamp,
             'title': volume.title.name,
-            'title_uuid': volume.title.uuid,
             'volume': volume.name,
             'volume_uuid': volume.uuid,
-            'pages': []
+            'pages': [],
         }
-
-        for key, json_path_rel in json_paths.items():
-            try:
-                img_path_rel = img_paths[key]
-                page_json = load_json(volume.path_ocr_cache / json_path_rel)
-                page_json['img_path'] = str(img_path_rel).replace('\\', '/')
-                out['pages'].append(page_json)
-            except Exception as e:
-                if ignore_errors:
+        with ZipFile(volume.output_path, "w", ZIP_DEFLATED, compresslevel=9) as output:
+            for img_path in tqdm(volume.get_img_paths().values(), desc="Processing pages..."):
+                try:
+                    result = mpocr_model(img_path)
+                except Exception as e:
+                    if not ignore_errors:
+                        raise e
                     logger.error(e)
                 else:
-                    raise e
+                    ocr_path = f"_ocr/{img_path.with_suffix('.json').name}"
+                    output.writestr(ocr_path, safe_json_dumps(result))
+                    output.writestr(img_path.name, img_path.read_bytes())
+                    metadata['pages'].append((img_path.name, ocr_path))
+            output.writestr("mokuro-metadata.json", json.dumps(metadata))
 
-        dump_json(out, volume.path_mokuro)
+
+def safe_json_dumps(obj: dict) -> str:
+    return json.dumps(obj, ensure_ascii=False, cls=NumpyEncoder)

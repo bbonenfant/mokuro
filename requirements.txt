@@ -2,7 +2,7 @@ fire
 loguru
 manga-ocr
 natsort
-numpy
+numpy==1.26
 opencv-python
 Pillow
 pillow-avif-plugin
@@ -13,4 +13,5 @@ scipy
 shapely
 torchsummary
 tqdm
+uuid-utils
 yattag

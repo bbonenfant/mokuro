@@ -64,66 +64,24 @@ class Title:
 class Volume:
     format_preference_order = ['', '.cbz', '.zip']
 
-    def __init__(self, path_in):
-        self.paths_in = {path_in}
-        self.path_mokuro = get_path_mokuro(path_in)
-
-        if self.path_mokuro.is_file():
-            self.mokuro_data = load_json(self.path_mokuro)
-            self.uuid = self.mokuro_data.get('volume_uuid')
-        else:
-            self.mokuro_data = None
-            self.uuid = str(uuid.uuid4())
-
-        self.title = Title(self.path_title)
-        self.name = self.path_mokuro.stem
-
-        if self.path_mokuro.is_file():
-            self.status = VolumeStatus.PROCESSED
-        elif self.path_ocr_cache.is_dir():
-            self.status = VolumeStatus.PARTIALLY_PROCESSED
-        else:
-            self.status = VolumeStatus.UNPROCESSED
-
-    @property
-    def path_in(self):
-        return min(self.paths_in, key=lambda path: Volume.format_preference_order.index(get_path_format(path)))
-
-    @property
-    def path_ocr_cache(self):
-        return self.path_mokuro.parent / '_ocr' / self.path_mokuro.stem
-
-    @property
-    def path_title(self):
-        return self.path_mokuro.parent
-
-    def get_json_paths(self):
-        json_paths = natsorted(p.relative_to(self.path_ocr_cache) for p in self.path_ocr_cache.glob('**/*.json'))
-        json_paths = {p.with_suffix(''): p for p in json_paths}
-        return json_paths
+    def __init__(self, path_in: Path):
+        self.path = path_in
+        self.output_path = path_in.with_suffix(".mbz.zip")
+        self.name = path_in.stem
+        self.title = Title(path_in.parent)
+        self.uuid = str(uuid.uuid4())
 
     def get_img_paths(self):
-        assert self.path_in.is_dir()
-        img_paths = natsorted(p.relative_to(self.path_in) for p in self.path_in.glob('**/*') if
-                              p.is_file() and p.suffix.lower() in ('.avif', '.jpg', '.jpeg', '.png', '.webp'))
-        img_paths = {p.with_suffix(''): p for p in img_paths}
+        assert self.path.is_dir()
+        img_paths = natsorted(
+            p.resolve() for p in self.path.glob('**/*')  # Maybe remove recursive glob.
+            if p.is_file() and p.suffix.lower() in ('.avif', '.jpg', '.jpeg', '.png', '.webp')
+        )
+        img_paths = {p.with_suffix('').name: p for p in img_paths}
         return img_paths
 
-    def unzip(self, tmp_dir=None):
-        if self.path_in.is_file() and self.path_in.suffix.lower() in {'.zip', '.cbz'}:
-
-            if tmp_dir is None:
-                path_dst = self.path_in.with_suffix('')
-            else:
-                path_dst = tmp_dir / self.uuid
-
-            logger.info(f'Unzipping {self.path_in}')
-            unzip(self.path_in, path_dst, correct_duplicated_root=True)
-
-            self.paths_in.add(path_dst)
-
     def __str__(self):
-        return f'{self.path_in} ({self.status})'
+        return f'{self.path} (-)'
 
 
 def get_path_mokuro(path_in: Path) -> Path:

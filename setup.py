@@ -24,7 +24,7 @@ setup(
         "loguru",
         "manga-ocr>=0.1.7",
         "natsort",
-        "numpy",
+        "numpy==1.26",
         "opencv-python>=4.1.2",
         "Pillow>=7.1.2",
         "pillow-avif-plugin>=1.4.3",
@@ -37,6 +37,7 @@ setup(
         "torchvision>=0.8.1",
         "transformers>=4.25.0",
         "tqdm>=4.41.0",
+        "uuid-utils==0.8.0",
         "yattag",
     ],
     entry_points={
