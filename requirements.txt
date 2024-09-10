@@ -14,4 +14,3 @@ shapely
 torchsummary
 tqdm
 uuid-utils
-yattag

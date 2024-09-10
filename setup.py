@@ -38,7 +38,6 @@ setup(
         "transformers>=4.25.0",
         "tqdm>=4.41.0",
         "uuid-utils==0.8.0",
-        "yattag",
     ],
     entry_points={
         "console_scripts": [

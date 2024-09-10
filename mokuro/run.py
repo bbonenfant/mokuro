@@ -6,7 +6,6 @@ import fire
 from loguru import logger
 
 from mokuro import MokuroGenerator
-# from mokuro.legacy.overlay_generator import generate_legacy_html
 from mokuro.volume import Volume
 
 
@@ -19,7 +18,6 @@ def run(*paths: str | Path,
         ignore_errors: bool = False,
         no_cache: bool = True,
         unzip: bool = False,
-        disable_html: bool = False,
         as_one_file: bool = True,
         ):
     """
@@ -41,13 +39,6 @@ def run(*paths: str | Path,
 
     if disable_ocr:
         logger.info('Running with OCR disabled')
-
-    if not disable_html:
-        logger.warning(
-            "Legacy HTML output is deprecated and will not be further developed. "
-            "It's recommended to use .mokuro format and web reader instead.")
-        # legacy HTML works only with unzipped output
-        unzip = True
 
     logger.info('Scanning paths...')
 
@@ -97,8 +88,6 @@ def run(*paths: str | Path,
 
         try:
             mg.process_volume(volume, ignore_errors=ignore_errors, no_cache=no_cache)
-            # if not disable_html:
-            #     generate_legacy_html(volume, as_one_file=as_one_file, ignore_errors=ignore_errors)
         except Exception:
             logger.exception(f'Error while processing {volume.path}')
         else:
