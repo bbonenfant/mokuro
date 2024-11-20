@@ -7,6 +7,7 @@ This is fork of the mokuro repo. All my changes are on the `fork` branch.
 * Added support for AVIF images.
 * Now outputs .mbz.zip files which bundles images and ocr output into a single file.
   * These *should* seemlessly work as .cbz files as well.
+* Add some manual character substitutions in the OCR code.
 
 # mokuro
 

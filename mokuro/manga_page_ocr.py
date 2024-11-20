@@ -92,6 +92,8 @@ class MangaPageOcr:
                     .replace("！！", "‼︎")  # replace double ! with single character.
                     .replace("？！", "⁈")  # replace ? ! with single character.
                     .replace("！？", "⁉︎")  # replace ! ? with single character.
+                    .replace("「", "｢")  # replace open quote with slimmer character.
+                    .replace("」", "｣")  # replace close quote with slimmer character.
                 )
                 result_blk['lines_coords'].append(line.tolist())
                 result_blk['lines'].append(line_text)
