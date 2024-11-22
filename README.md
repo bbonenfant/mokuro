@@ -1,6 +1,13 @@
 ## NOTE
 This is fork of the mokuro repo. All my changes are on the `fork` branch.
 
+### Install
+Assuming your have both pip and git, you can install this project
+with the following command:
+```bash
+pip install git+https://github.com/bbonenfant/mokuro
+```
+
 ### My Changelog
 * Moved comic_text_detector into mokuro package
   * (will probably clean up further)
