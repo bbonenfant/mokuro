@@ -32,11 +32,17 @@ class MangaPageOcr:
         self.disable_ocr = disable_ocr
 
         if not self.disable_ocr:
-            import torch
             from .comic_text_detector.inference import TextDetector
             from manga_ocr import MangaOcr, __version__ as __manga_ocr_version__
+
+            # The transformers package is very noisy, so suppress that.
+            from transformers.utils.logging import set_verbosity_error
+            set_verbosity_error()
+
+            import torch
             device = 'cuda' if torch.cuda.is_available() and not force_cpu else 'cpu'
             logger.info(f'Initializing text detector, using device {device}')
+
             self.text_detector = TextDetector(
                 model_path=cache.comic_text_detector,
                 input_size=detector_input_size,

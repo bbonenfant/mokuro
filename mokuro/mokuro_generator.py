@@ -3,7 +3,7 @@ import json
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from loguru import logger
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 from mokuro import __version__, __comic_text_detector_version__
 from mokuro.manga_page_ocr import MangaPageOcr
