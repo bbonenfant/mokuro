@@ -20,6 +20,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+        "filetype",
         "fire",
         "loguru",
         "manga-ocr>=0.1.7",

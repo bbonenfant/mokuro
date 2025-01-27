@@ -2,6 +2,7 @@ import uuid
 import zipfile
 from pathlib import Path
 
+from filetype import is_image
 from natsort import natsorted
 
 
@@ -31,6 +32,7 @@ class Volume:
         self._namelist = natsorted(
             p.resolve() for p in self.path.iterdir()
             if p.is_file() and p.suffix.lower() in Volume.supported_formats
+                and is_image(p)
         )
 
     def __str__(self):
@@ -48,16 +50,16 @@ class VolumeZip(Volume):
                 yield path.stem, img_path
 
     def _set_namelist(self):
+        self._namelist = []
         with zipfile.ZipFile(self.path) as archive:
-            paths = natsorted(
-                Path(name) for name in archive.namelist()
-                if not name.startswith('__MACOSX/')  # Filter out bad files
-            )
-            self._namelist = [
-                path for path in paths
-                if path.suffix.lower() in Volume.supported_formats
-                   and len(path.parts) == 1  # Only look for "root" files
-            ]
+            for name in natsorted(archive.namelist()):
+                path = Path(name)
+                if path.suffix.lower() not in self.supported_formats:
+                    continue
+                with archive.open(name) as file:
+                    if is_image(file.read(150)):  # Only need the first 150 bytes
+                        self._namelist.append(path)
+
 
 def volume_from_path(path: Path):
     path = Path(path)
