@@ -63,6 +63,6 @@ class VolumeZip(Volume):
 
 def volume_from_path(path: Path):
     path = Path(path)
-    if path.suffix == '.zip':
+    if path.suffix in ('.zip', '.cbz'):
         return VolumeZip(path)
     return Volume(path)
