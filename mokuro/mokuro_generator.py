@@ -1,8 +1,11 @@
 from datetime import datetime
 import json
+import warnings
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from loguru import logger
+from tqdm import TqdmExperimentalWarning
+warnings.filterwarnings("ignore", category=TqdmExperimentalWarning)
 from tqdm.autonotebook import tqdm
 
 from mokuro import __version__, __comic_text_detector_version__
@@ -52,7 +55,7 @@ class MokuroGenerator:
             'volume_uuid': volume.uuid,
             'pages': [],
         }
-        progressbar = lambda i: tqdm(i, desc="Processing pages...", total=len(volume.namelist))
+        progressbar = lambda i: tqdm(i, desc="Processing pages...", total=len(volume.namelist), unit="pages")
         with ZipFile(volume.output_path, "w", ZIP_DEFLATED, compresslevel=9) as output:
             for stem, img_path in progressbar(volume.get_img_paths()):
                 try:
