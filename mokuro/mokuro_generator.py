@@ -35,7 +35,7 @@ class MokuroGenerator:
             )
         return self._mpocr
 
-    def process_volume(self, volume: Volume, ignore_errors=False, no_cache=False):
+    def process_volume(self, volume: Volume, ignore_errors=False):
         mpocr_model = self.init_models()
         timestamp = datetime.now().isoformat()
         metadata = {

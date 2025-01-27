@@ -13,7 +13,6 @@ def run(*paths: str | Path,
         disable_confirmation: bool = False,
         disable_ocr: bool = False,
         ignore_errors: bool = False,
-        no_cache: bool = True,
         ):
     """
     Process manga volumes with mokuro.
@@ -26,7 +25,6 @@ def run(*paths: str | Path,
         disable_confirmation: Disable confirmation prompt. If False, the user will be prompted to confirm the list of volumes to be processed.
         disable_ocr: Disable OCR processing. Generate mokuro/HTML files without OCR results.
         ignore_errors: Continue processing volumes even if an error occurs.
-        no_cache: Do not use cached OCR results from previous runs (_ocr directories).
     """
 
     if disable_ocr:
@@ -79,7 +77,7 @@ def run(*paths: str | Path,
         logger.info(f'Processing {i + 1}/{len(volumes)}: {volume.path}')
 
         try:
-            mg.process_volume(volume, ignore_errors=ignore_errors, no_cache=no_cache)
+            mg.process_volume(volume, ignore_errors=ignore_errors)
         except Exception:
             logger.exception(f'Error while processing {volume.path}')
         else:
