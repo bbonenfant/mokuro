@@ -1,24 +1,19 @@
 from pathlib import Path
-from tempfile import TemporaryDirectory
-from typing import Sequence, Optional, Union
 
-import fire
 from loguru import logger
 
 from mokuro import MokuroGenerator
-from mokuro.volume import Volume
+from mokuro.volume import volume_from_path
 
 
 def run(*paths: str | Path,
-        parent_dir: Optional[Union[str, Path]] = None,
+        parent_dir: str | Path = None,
         pretrained_model_name_or_path: str = 'kha-white/manga-ocr-base',
         force_cpu: bool = False,
         disable_confirmation: bool = False,
         disable_ocr: bool = False,
         ignore_errors: bool = False,
         no_cache: bool = True,
-        unzip: bool = False,
-        as_one_file: bool = True,
         ):
     """
     Process manga volumes with mokuro.
@@ -32,9 +27,6 @@ def run(*paths: str | Path,
         disable_ocr: Disable OCR processing. Generate mokuro/HTML files without OCR results.
         ignore_errors: Continue processing volumes even if an error occurs.
         no_cache: Do not use cached OCR results from previous runs (_ocr directories).
-        unzip: Extract volumes in zip/cbz format in their original location.
-        disable_html: Disable legacy HTML output. If True, acts as if --unzip is True.
-        as_one_file: Applies only to legacy HTML. If False, generate separate CSS and JS files instead of embedding them in the HTML file.
     """
 
     if disable_ocr:
@@ -58,7 +50,7 @@ def run(*paths: str | Path,
             ):
                 normalized_paths.append(p)
 
-    volumes = [Volume(path) for path in normalized_paths]
+    volumes = [volume_from_path(path) for path in normalized_paths]
 
     if len(volumes) == 0:
         logger.error('Found no paths to process. Did you set the paths correctly?')
@@ -82,7 +74,7 @@ def run(*paths: str | Path,
         disable_ocr=disable_ocr,
     )
 
-    num_sucessful = 0
+    num_successful = 0
     for i, volume in enumerate(volumes):
         logger.info(f'Processing {i + 1}/{len(volumes)}: {volume.path}')
 
@@ -91,10 +83,6 @@ def run(*paths: str | Path,
         except Exception:
             logger.exception(f'Error while processing {volume.path}')
         else:
-            num_sucessful += 1
+            num_successful += 1
 
-    logger.info(f'Processed successfully: {num_sucessful}/{len(volumes)}')
-
-
-if __name__ == '__main__':
-    fire.Fire(run)
+    logger.info(f'Processed successfully: {num_successful}/{len(volumes)}')

@@ -1,4 +1,5 @@
 import uuid
+import zipfile
 from enum import Enum, auto
 from pathlib import Path
 
@@ -62,7 +63,7 @@ class Title:
 
 
 class Volume:
-    format_preference_order = ['', '.cbz', '.zip']
+    supported_formats = ('.avif', '.jpg', '.jpeg', '.png', '.webp')
 
     def __init__(self, path_in: Path):
         self.path = path_in
@@ -70,23 +71,48 @@ class Volume:
         self.name = path_in.stem
         self.title = Title(path_in.parent)
         self.uuid = str(uuid.uuid4())
+        self._namelist = None
+
+    @property
+    def namelist(self):
+        if self._namelist is None:
+            self._set_namelist()
+        return self._namelist
 
     def get_img_paths(self):
+        for path in self.namelist:
+            yield path.stem, path
+
+    def _set_namelist(self):
         assert self.path.is_dir()
-        img_paths = natsorted(
-            p.resolve() for p in self.path.glob('**/*')  # Maybe remove recursive glob.
-            if p.is_file() and p.suffix.lower() in ('.avif', '.jpg', '.jpeg', '.png', '.webp')
+        self._namelist = natsorted(
+            p.resolve() for p in self.path.iterdir()
+            if p.is_file() and p.suffix.lower() in Volume.supported_formats
         )
-        img_paths = {p.with_suffix('').name: p for p in img_paths}
-        return img_paths
 
     def __str__(self):
         return f'{self.path} (-)'
 
 
-def get_path_mokuro(path_in: Path) -> Path:
-    if path_in.is_dir():
-        return path_in.parent / (path_in.name + '.mokuro')
-    if path_in.is_file() and path_in.suffix.lower() in {'.zip', '.cbz'}:
-        return path_in.with_suffix('.mokuro')
-    raise ValueError(f"expected directory or zip file -- found: {path_in}")
+class VolumeZip(Volume):
+
+    def get_img_paths(self):
+        with zipfile.ZipFile(self.path) as archive:
+            for path in self.namelist:
+                img_path = zipfile.Path(archive, at=str(path))
+                img_path.read = img_path.read_bytes  # a bit of a hack but works
+                yield path.stem, img_path
+
+    def _set_namelist(self):
+        with zipfile.ZipFile(self.path) as archive:
+            paths = natsorted(map(Path, archive.namelist()))
+            self._namelist = [
+                path for path in paths
+                if path.suffix.lower() in Volume.supported_formats
+            ]
+
+def volume_from_path(path: Path):
+    path = Path(path)
+    if path.suffix == '.zip':
+        return VolumeZip(path)
+    return Volume(path)

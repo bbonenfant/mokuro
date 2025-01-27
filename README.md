@@ -12,8 +12,9 @@ pip install git+https://github.com/bbonenfant/mokuro
 * Moved comic_text_detector into mokuro package
   * (will probably clean up further)
 * Added support for AVIF images.
+* Process Zip volumes without decompressing
 * Now outputs .mbz.zip files which bundles images and ocr output into a single file.
-  * These *should* seemlessly work as .cbz files as well.
+  * These *should* seamlessly work as .cbz files as well.
 * Add some manual character substitutions in the OCR code.
 
 # mokuro

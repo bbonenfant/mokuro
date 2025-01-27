@@ -52,8 +52,9 @@ class MokuroGenerator:
             'volume_uuid': volume.uuid,
             'pages': [],
         }
+        progressbar = lambda i: tqdm(i, desc="Processing pages...", total=len(volume.namelist))
         with ZipFile(volume.output_path, "w", ZIP_DEFLATED, compresslevel=9) as output:
-            for img_path in tqdm(volume.get_img_paths().values(), desc="Processing pages..."):
+            for stem, img_path in progressbar(volume.get_img_paths()):
                 try:
                     result = mpocr_model(img_path)
                 except Exception as e:
@@ -61,7 +62,7 @@ class MokuroGenerator:
                         raise e
                     logger.error(e)
                 else:
-                    ocr_path = f"_ocr/{img_path.with_suffix('.json').name}"
+                    ocr_path = f"_ocr/{stem}.json"
                     output.writestr(ocr_path, safe_json_dumps(result))
                     output.writestr(img_path.name, img_path.read_bytes())
                     metadata['pages'].append((img_path.name, ocr_path))
