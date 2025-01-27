@@ -60,7 +60,7 @@ class MokuroGenerator:
                 except Exception as e:
                     if not ignore_errors:
                         raise e
-                    logger.error(e)
+                    logger.error(f'failed to parse {str(img_path)} - {e}')
                 else:
                     ocr_path = f"_ocr/{stem}.json"
                     output.writestr(ocr_path, safe_json_dumps(result))
