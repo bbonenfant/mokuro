@@ -46,7 +46,7 @@ class MokuroGenerator:
             ),
             'created_at': timestamp,
             'modified_at': timestamp,
-            'series': volume.title.name,
+            'series': volume.title,
             'title': volume.name,
             'volume': volume.name,
             'volume_uuid': volume.uuid,
