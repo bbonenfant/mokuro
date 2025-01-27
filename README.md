@@ -7,6 +7,9 @@ with the following command:
 ```bash
 pip install git+https://github.com/bbonenfant/mokuro
 ```
+If you are not comfortable installing and running Python packages from GitHub,
+you can run this on Colab using
+[these instructions](https://githubtocolab.com/bbonenfant/mokuro/blob/fork/notebooks/mokuro_guide.ipynb).
 
 ### My Changelog
 * Moved comic_text_detector into mokuro package
