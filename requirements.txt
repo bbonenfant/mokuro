@@ -2,7 +2,7 @@ fire
 loguru
 manga-ocr
 natsort
-numpy==1.26
+numpy<2.1,>2.0
 opencv-python
 Pillow
 pillow-avif-plugin

@@ -10,8 +10,12 @@ class NumpyEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, np.ndarray):
             return o.tolist()
-        if isinstance(o, np.generic):
-            return o.item()
+        elif isinstance(o, np.bool_):
+            return bool(o)
+        elif isinstance(o, np.floating):
+            return float(o)
+        elif isinstance(o, np.integer):
+            return int(o)
         return json.JSONEncoder.default(self, o)
 
 

@@ -66,7 +66,7 @@ class MangaPageOcr:
         for blk_idx, blk in enumerate(blk_list):
             result_blk = {
                 "uuid": uuid7().hex,
-                'box': list(blk.xyxy),
+                'box': [item if item > 0 else 0 for item in blk.xyxy],
                 'vertical': blk.vertical,
                 'font_size': int(blk.font_size),  # Font size in pixels should be integer.
                 'lines_coords': [],

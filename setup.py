@@ -25,7 +25,7 @@ setup(
         "loguru",
         "manga-ocr>=0.1.7",
         "natsort",
-        "numpy==1.26",
+        "numpy<2.1,>2.0",
         "opencv-python>=4.1.2",
         "Pillow>=7.1.2",
         "pillow-avif-plugin>=1.4.3",
